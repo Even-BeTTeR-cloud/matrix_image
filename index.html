@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>픽셀 행렬 실험실 — 행렬 연산으로 그림 바꾸기</title>
+<meta name="description" content="0~255 명암의 픽셀 그림에 행렬을 곱해 보는 고등학교 수학 실습 도구">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="brand">
+    <h1>픽셀 <span>행렬</span> 실험실</h1>
+    <p>0부터 255까지의 밝기로 그림을 그리고, 행렬을 곱해 그림을 바꿉니다.</p>
+  </div>
+  <div class="controls">
+    <label class="field">크기 n
+      <select id="sizeSel"><option>4</option><option>6</option><option selected>8</option><option>10</option><option>12</option><option>16</option></select>
+    </label>
+    <button class="ctl" id="btnNumbers">숫자 보기</button>
+    <button class="ctl" id="btnRamp">0을 검정으로</button>
+    <button class="ctl ghost" id="btnResetAll">전체 초기화</button>
+  </div>
+</header>
+
+<main class="workbench">
+
+  <!-- STEP 1 · 그림 그리기 -->
+  <section class="panel" id="panel-draw">
+    <header><span class="eyebrow">STEP 1</span><h2>그림 그리기 · 행렬 A</h2></header>
+    <p class="hint">각 칸에 <b>0~255</b>의 값을 칠합니다. 값이 클수록 진합니다. 같은 값을 다시 누르면 0으로 지워집니다.</p>
+
+    <div class="brushbar">
+      <div class="row">
+        <label class="field">붓 값 <input type="range" id="brushRange" min="0" max="255" value="255"></label>
+        <input type="number" id="brushNum" min="0" max="255" value="255">
+        <span id="brushChip"></span>
+      </div>
+      <div class="swatches" id="swatches"></div>
+    </div>
+
+    <div class="toolbar">
+      <button class="ctl ghost" id="btnClearA">A 지우기</button>
+      <button class="ctl ghost" id="btnExample">예시 그림</button>
+      <button class="ctl ghost" id="btnToggleB">행렬 B 열기</button>
+    </div>
+
+    <div class="grid-wrap">
+      <div class="pixgrid editable" id="gridA"></div>
+      <div class="gridcap" id="capA"></div>
+    </div>
+
+    <div id="bwrap" hidden>
+      <div class="matbox">
+        <h3>행렬 B — 덧셈·뺄셈·곱셈에 쓰입니다</h3>
+        <p class="hint">곱셈에 쓸 때는 성분을 0과 1로 두는 편이 결과를 읽기 쉽습니다.</p>
+        <div class="toolbar">
+          <button class="ctl ghost" id="btnClearB">B 지우기</button>
+          <button class="ctl ghost" id="btnCopyAB">A를 B로 복사</button>
+          <button class="ctl ghost" id="btnIdentityB">단위행렬 I</button>
+          <button class="ctl ghost" id="btnExchangeB">반대각행렬 J</button>
+        </div>
+        <div class="grid-wrap">
+          <div class="pixgrid editable" id="gridB"></div>
+          <div class="gridcap" id="capB"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><i style="background:#f4f2ea"></i>0</span>
+      <span><i style="background:#7c7a73"></i>128</span>
+      <span><i style="background:#0d1016"></i>255</span>
+      <span><i style="background:#ff4e8a"></i>음수</span>
+    </div>
+  </section>
+
+  <!-- STEP 2·3 · 목표와 연산 -->
+  <section class="panel" id="panel-ops">
+    <header><span class="eyebrow">STEP 2</span><h2>어떻게 바꾸고 싶나요?</h2></header>
+    <textarea id="goalInput" rows="2" placeholder="예: 그림을 시계 반대 방향으로 90도 돌린 다음, 밝기를 절반으로 낮추고 싶다."></textarea>
+
+    <header class="spaced"><span class="eyebrow">STEP 3</span><h2>연산 쌓기</h2></header>
+    <p class="hint">연산을 고르면 순서대로 쌓입니다. 각 칸의 작은 그림은 그 단계까지의 중간 결과입니다.</p>
+
+    <div class="addmenu">
+      <h3>행렬의 기본 연산</h3>
+      <div class="chiprow">
+        <button class="chip" data-add="add">A + B</button>
+        <button class="chip" data-add="sub">A − B</button>
+        <button class="chip" data-add="scalar">실수배 kA</button>
+        <button class="chip" data-add="mulR">오른쪽 곱 AB</button>
+        <button class="chip" data-add="mulL">왼쪽 곱 BA</button>
+      </div>
+      <h3>기본행연산</h3>
+      <div class="chiprow">
+        <button class="chip" data-add="rswap">두 행 교환</button>
+        <button class="chip" data-add="rscale">한 행에 상수배</button>
+        <button class="chip" data-add="radd">한 행에 다른 행의 상수배 더하기</button>
+      </div>
+      <h3>선형변환</h3>
+      <div class="chiprow">
+        <button class="chip" data-add="refX">x축 대칭</button>
+        <button class="chip" data-add="refY">y축 대칭</button>
+        <button class="chip" data-add="refO">원점 대칭</button>
+        <button class="chip" data-add="refYX">y=x 대칭</button>
+        <button class="chip" data-add="scale">닮음변환 k배</button>
+        <button class="chip" data-add="rotate">회전변환 θ</button>
+        <button class="chip" data-add="custom">직접 입력 2×2</button>
+        <button class="chip" data-add="undo">역행렬로 되돌리기</button>
+      </div>
+    </div>
+
+    <div class="strip" id="strip"></div>
+  </section>
+
+  <!-- 결과 -->
+  <section class="panel" id="panel-result">
+    <header><span class="eyebrow">RESULT</span><h2>계산 결과</h2></header>
+    <div class="toolbar">
+      <button class="ctl" id="btnClip">0~255로 자르기</button>
+      <button class="ctl ghost" id="btnResultToA">결과를 A로 가져오기</button>
+    </div>
+    <div class="grid-wrap">
+      <div class="pixgrid" id="gridR"></div>
+      <div class="gridcap" id="capR"></div>
+    </div>
+
+    <div class="matbox">
+      <h3>내가 계산한 식</h3>
+      <div class="tag block" id="exprBox">A</div>
+      <p class="hint spaced-sm" id="symbolNote"></p>
+    </div>
+
+    <div class="matbox">
+      <h3>지금까지의 합성행렬 (<span id="compSize">8×8</span>)</h3>
+      <div class="formula" id="compFormula">결과 = A</div>
+      <div class="twoup" id="compMats"></div>
+      <p class="hint spaced-sm" id="compNote"></p>
+    </div>
+
+    <div class="matbox">
+      <h3>결과 행렬</h3>
+      <div class="matscroll" id="resultMat"></div>
+    </div>
+  </section>
+</main>
+
+<!-- STEP 4 · 제출 -->
+<section class="submit">
+  <div class="submit-inner">
+    <header class="submit-head">
+      <span class="eyebrow">STEP 4</span>
+      <h2>제출문 만들기</h2>
+    </header>
+
+    <div class="sentence" id="sentence"></div>
+
+    <div class="grow">
+      <div>
+        <label class="field" for="goalMirror">만들고 싶었던 것 (STEP 2와 연결됩니다)</label>
+        <textarea id="goalMirror" rows="2" placeholder="예: 원래 그림을 좌우로 뒤집은 모양"></textarea>
+      </div>
+      <div>
+        <label class="field" for="outcomeInput">계산해 보니 나온 것</label>
+        <textarea id="outcomeInput" rows="2" placeholder="예: 좌우가 뒤집힌 그림. 가운데 세로줄은 그대로였다."></textarea>
+      </div>
+    </div>
+
+    <div class="row-actions">
+      <button class="ctl primary" id="btnCopy">제출문 복사</button>
+      <button class="ctl" id="btnSaveJson">JSON으로 저장</button>
+      <span class="hint inline">저장 파일에는 행렬 A·B, 연산 목록, 합성행렬 L·R, 결과 행렬, 제출문이 모두 들어 있습니다.</span>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

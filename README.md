@@ -36,8 +36,27 @@
 ## GitHub Pages 배포
 
 빌드 과정이 없는 정적 사이트라서 파일을 그대로 올리면 됩니다.
+**`index.html` 이 저장소 맨 위(root)에 놓이는 것**만 지키면 됩니다.
+
+```
+저장소 루트/
+├─ index.html      ← 여기 있어야 한다
+├─ css/style.css
+└─ js/*.js
+```
+
+### 방법 1 · 브라우저에서 끌어다 놓기
+
+1. github.com 에서 **New repository** 로 저장소를 만든다 (Public)
+2. **Add file → Upload files** 를 누른다
+3. 압축을 푼 `pixel-matrix-lab` 폴더를 열고, **폴더 자체가 아니라 그 안의 것들**
+   (`index.html`, `css`, `js`, `README.md`)을 한꺼번에 끌어다 놓는다
+4. 아래 **Commit changes** 를 누른다
+
+### 방법 2 · 명령줄
 
 ```bash
+cd pixel-matrix-lab
 git init
 git add .
 git commit -m "픽셀 행렬 실험실"
@@ -46,12 +65,14 @@ git remote add origin https://github.com/<계정>/<저장소>.git
 git push -u origin main
 ```
 
-그다음 저장소의 **Settings → Pages** 에서
+### Pages 켜기
+
+저장소의 **Settings → Pages** 에서
 
 - Source: `Deploy from a branch`
 - Branch: `main` / `/ (root)`
 
-를 고르면 잠시 뒤 `https://<계정>.github.io/<저장소>/` 로 열립니다.
+를 고르고 저장하면 1~2분 뒤 `https://<계정>.github.io/<저장소>/` 로 열립니다.
 
 ### 로컬에서 확인할 때
 
@@ -79,7 +100,7 @@ js/
 ├─ render.js        색 계산, 격자·행렬 그리기
 ├─ strip.js         연산 카드 그리기
 ├─ examples.js      예시 그림
-├─ submit.js        제출문 · JSON · 서버 저장 자리
+├─ submit.js        제출문 · JSON 내보내기
 └─ app.js           시작점, 이벤트 연결
 ```
 
@@ -88,19 +109,26 @@ js/
 
 ---
 
-## DB 연동
+## 제출물 수거
 
-지금은 JSON 파일 내려받기까지만 되어 있습니다. 서버가 준비되면
-`js/submit.js` 의 `saveToServer()` 안에 있는 `fetch` 주석을 풀고 주소만 바꾸면 됩니다.
+서버가 없는 정적 사이트라서, 학생 작업은 브라우저 안에만 있습니다. 두 가지 길이 있습니다.
 
-내보내는 데이터에는 다음이 들어 있습니다.
+**제출문 복사** — `제출문 복사` 버튼을 누르면 아래 문장이 클립보드에 담깁니다.
+구글 폼이나 클래스룸 과제 칸에 붙여 넣게 하면 됩니다. 대부분의 수업에는 이 방법이면 충분합니다.
+
+```
+(  )를 만들고 싶었다. 그래서 (  )를 계산했더니 (  )가 나왔다.
+```
+
+**JSON 저장** — 그림과 연산 과정까지 남기고 싶을 때 씁니다.
+`pixel-matrix-<시각>.json` 파일이 내려받아지고, 안에는 다음이 들어 있습니다.
 
 ```jsonc
 {
   "n": 8,
   "matrixA": [[...]],          // 학생이 그린 그림
   "matrixB": [[...]],
-  "steps": [ ... ],            // 쌓은 연산 목록 (재현 가능)
+  "steps": [ ... ],            // 쌓은 연산 목록
   "expression": "P2·J·(A)ᵀ·J·Q1",
   "composite": { "left": [[...]], "right": [[...]], "transposed": false, "base": "A" },
   "result": [[...]],
@@ -110,7 +138,8 @@ js/
 }
 ```
 
-브라우저 콘솔에서 `PixelMatrixLab.getSubmission()` 으로도 같은 데이터를 꺼낼 수 있습니다.
+`steps` 가 그대로 들어 있어서, 나중에 이 파일만 있으면 학생의 작업을 처음부터 재현할 수 있습니다.
+브라우저 콘솔에서 `PixelMatrixLab.getSubmission()` 으로도 같은 데이터를 볼 수 있습니다.
 
 ---
 
